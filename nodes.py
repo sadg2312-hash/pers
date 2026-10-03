@@ -360,16 +360,23 @@ async def get_usage_from_node(slot: int, uid: str) -> int | None:
 
 
 async def fetch_all_nodes_usage(uid: str) -> int:
-    """از همه نودهای فعال می‌پرسه مصرف این کاربر چقدره و جمعش رو برمی‌گردونه."""
-    total = 0
+    """از همه نودهای فعال به‌صورت موازی می‌پرسه مصرف این کاربر چقدره و جمعش رو برمی‌گردونه."""
+    tasks = []
     for s in DEFAULT_SLOTS:
         slot = s["slot"]
         node = get_node_by_slot(slot)
         if not node or not node.get("address"):
             continue
-        usage = await get_usage_from_node(slot, uid)
-        if usage is not None:
-            total += usage
+        tasks.append(get_usage_from_node(slot, uid))
+    
+    if not tasks:
+        return 0
+    
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    total = 0
+    for r in results:
+        if isinstance(r, int):
+            total += r
     return total
 
 
