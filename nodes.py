@@ -40,36 +40,36 @@ DEFAULT_SLOTS = [
     {"slot": 8, "flag": "🇬🇧", "country_code": "gb", "label": "United Kingdom"},
     {"slot": 9, "flag": "🇫🇷", "country_code": "fr", "label": "France"},
     {"slot": 10, "flag": "🇯🇵", "country_code": "jp", "label": "Japan"},
-    {"slot": 11, "flag": "🇧🇪", "country_code": "be", "label": "Belgium"},
-    {"slot": 12, "flag": "🇦🇺", "country_code": "au", "label": "Australia"},
-    {"slot": 13, "flag": "🇵🇱", "country_code": "pl", "label": "Poland"},
 ]
 
-def migrate_nodes_table_for_13_slots():
+def migrate_nodes_table_for_10_slots():
     """
-    جدول nodes رو به CHECK(1-13) مهاجرت می‌ده.
+    جدول nodes رو از CHECK(1-5) یا CHECK(1-7) به CHECK(1-10) مهاجرت می‌ده.
     
     چون SQLite اجازه‌ی تغییر CHECK رو نمی‌ده، جدول رو از نو می‌سازیم.
     """
     conn = get_db()
     try:
+        # چک کن جدول فعلی، CHECK قدیمی داره یا نه
         cur = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='nodes'")
         row = cur.fetchone()
         if not row:
-            return
+            return  # جدول وجود نداره، بعداً ساخته می‌شه
         
         current_sql = row["sql"] or ""
-        if "BETWEEN 1 AND 13" in current_sql:
-            return
+        if "BETWEEN 1 AND 10" in current_sql:
+            return  # از قبل درسته
         
-        logger.warning("[NODE] Migrating nodes table to CHECK(1-13)...")
+        logger.warning("[NODE] Migrating nodes table to CHECK(1-10)...")
         
+        # ۱. جدول قدیمی رو rename کن
         conn.execute("ALTER TABLE nodes RENAME TO nodes_old")
         
+        # ۲. جدول جدید بساز
         conn.execute("""
             CREATE TABLE nodes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                slot INTEGER UNIQUE CHECK(slot BETWEEN 1 AND 13),
+                slot INTEGER UNIQUE CHECK(slot BETWEEN 1 AND 10),
                 name TEXT NOT NULL,
                 country_code TEXT NOT NULL,
                 flag TEXT NOT NULL,
@@ -83,16 +83,18 @@ def migrate_nodes_table_for_13_slots():
             )
         """)
         
+        # ۳. داده‌های قدیمی رو کپی کن
         conn.execute("""
             INSERT INTO nodes (id, slot, name, country_code, flag, address, api_token, status, enabled, last_check, last_stats_json, created_at)
             SELECT id, slot, name, country_code, flag, address, api_token, status, enabled, last_check, last_stats_json, created_at
             FROM nodes_old
         """)
         
+        # ۴. جدول قدیمی رو پاک کن
         conn.execute("DROP TABLE nodes_old")
         
         conn.commit()
-        logger.info("[NODE] Successfully migrated nodes table to CHECK(1-13)")
+        logger.info("[NODE] Successfully migrated nodes table to CHECK(1-10)")
     except Exception as e:
         logger.error(f"[NODE] Migration failed: {e}")
         conn.rollback()
@@ -108,7 +110,7 @@ def init_default_slots():
     - اگه جدول پره، فقط اسلات‌های جدید (که نیستن) رو اضافه می‌کنه
     """
     conn = get_db()
-    migrate_nodes_table_for_13_slots()
+    migrate_nodes_table_for_10_slots()
     try:
         # چک کن کدوم اسلات‌ها هستن
         cur = conn.execute("SELECT slot FROM nodes")
@@ -360,23 +362,16 @@ async def get_usage_from_node(slot: int, uid: str) -> int | None:
 
 
 async def fetch_all_nodes_usage(uid: str) -> int:
-    """از همه نودهای فعال به‌صورت موازی می‌پرسه مصرف این کاربر چقدره و جمعش رو برمی‌گردونه."""
-    tasks = []
+    """از همه نودهای فعال می‌پرسه مصرف این کاربر چقدره و جمعش رو برمی‌گردونه."""
+    total = 0
     for s in DEFAULT_SLOTS:
         slot = s["slot"]
         node = get_node_by_slot(slot)
         if not node or not node.get("address"):
             continue
-        tasks.append(get_usage_from_node(slot, uid))
-    
-    if not tasks:
-        return 0
-    
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    total = 0
-    for r in results:
-        if isinstance(r, int):
-            total += r
+        usage = await get_usage_from_node(slot, uid)
+        if usage is not None:
+            total += usage
     return total
 
 
