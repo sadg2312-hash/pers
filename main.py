@@ -1496,17 +1496,28 @@ def get_total_node_usage(uid: str) -> int:
 
 
 async def get_total_usage(uid: str) -> int:
-    """جمع مصرف Master + Nodeها (فقط از cache).
+    """جمع مصرف Master + همه Nodeها رو برمی‌گردونه.
     
-    ⚡ سریع: فوری جواب می‌ده. مصرف Nodeها با تأخیر ۳۰ ثانیه‌ای میاد.
-    cache رو usage_cache_updater_loop آپدیت می‌کنه.
+    مستقیم از نودها می‌پرسه (به‌جای انتظار برای گزارش).
     """
     master_used = 0
     link = LINKS.get(uid)
     if link:
         master_used = int(link.get("used_bytes", 0))
     
-    return master_used + get_cached_node_usage(uid)
+    # ⭐ مستقیم از نودها بپرس
+    node_total = 0
+    try:
+        from nodes import fetch_all_nodes_usage
+        node_total = await asyncio.wait_for(fetch_all_nodes_usage(uid), timeout=3.0)
+    except asyncio.TimeoutError:
+        logger.warning(f"[USAGE] fetch_all_nodes_usage timed out for {uid[:8]}")
+        node_total = get_cached_node_usage(uid)
+    except Exception as e:
+        logger.warning(f"[USAGE] fetch_all_nodes_usage failed for {uid[:8]}: {e}")
+        node_total = get_cached_node_usage(uid)
+    
+    return master_used + node_total
 
 
 def invalidate_node_usage_cache(uid: str | None = None):
