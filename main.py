@@ -401,6 +401,7 @@ COUNTRIES = {
     "hk": {"name": "Hong Kong",     "flag": "🇭🇰"},
     "ir": {"name": "Iran",          "flag": "🇮🇷"},
     "br": {"name": "Brazil",        "flag": "🇧🇷"},
+    "be": {"name": "Belgium",       "flag": "🇧🇪"},
 }
 
 MAX_NODES = 13
