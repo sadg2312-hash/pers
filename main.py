@@ -124,22 +124,28 @@ async def check_github_latest(force: bool = False) -> dict:
     return {"tag": new_tag, "url": new_url, "checked_at": now}
 
 async def usage_cache_updater_loop():
-    """هر ۳۰ ثانیه، مصرف همه کاربرا رو از نودها می‌گیره و cache رو آپدیت می‌کنه."""
-    await asyncio.sleep(20)  # تأخیر اولیه
+    """هر ۱۵ ثانیه، مصرف همه کاربرا رو از نودها می‌گیره و cache رو آپدیت می‌کنه."""
+    await asyncio.sleep(15)  # تأخیر اولیه
     while True:
         try:
             uids = list(LINKS.keys())
-            for uid in uids[:50]:  # حداکثر ۵۰ کاربر
+            # برای هر کاربر، به‌صورت موازی از همه نودها بپرس
+            for uid in uids[:100]:  # حداکثر ۱۰۰ کاربر
                 try:
                     from nodes import fetch_all_nodes_usage
-                    node_total = await asyncio.wait_for(fetch_all_nodes_usage(uid), timeout=10.0)
+                    node_total = await asyncio.wait_for(
+                        fetch_all_nodes_usage(uid),
+                        timeout=15.0
+                    )
                     _node_usage_cache[uid] = (node_total, time.time())
+                    logger.debug(f"[USAGE-CACHE] Updated cache for {uid[:8]}: {node_total} bytes")
+                except asyncio.TimeoutError:
+                    logger.warning(f"[USAGE-CACHE] Timeout for {uid[:8]}")
                 except Exception as e:
-                    logger.debug(f"[USAGE-CACHE] Failed to update cache for {uid[:8]}: {e}")
+                    logger.debug(f"[USAGE-CACHE] Failed for {uid[:8]}: {e}")
         except Exception as e:
             logger.error(f"[USAGE-CACHE] Loop error: {e}")
-        await asyncio.sleep(30)
-
+        await asyncio.sleep(15)  # هر ۱۵ ثانیه
 
 async def github_check_loop():
     """Background task: check GitHub every 60 seconds for new releases."""
@@ -1468,14 +1474,12 @@ _node_usage_cache: dict = {}  # {uid: (total_bytes, last_refresh_ts)}
 _NODE_USAGE_CACHE_TTL = 5  # ثانیه
 
 def get_cached_node_usage(uid: str) -> int:
-    """مثل get_total_node_usage ولی با cache ۵ ثانیه‌ای."""
-    now = time.time()
+    """مصرف Nodeها رو از cache برمی‌گردونه (فوری — هرگز بلاک نمی‌کنه)."""
     cached = _node_usage_cache.get(uid)
-    if cached and (now - cached[1]) < _NODE_USAGE_CACHE_TTL:
+    if cached:
         return cached[0]
-    node_total = get_total_node_usage(uid)
-    _node_usage_cache[uid] = (node_total, now)
-    return node_total
+    # اگه cache خالیه، صفر برگردون (به‌جای صدا زدن DB)
+    return 0
 
 
 def get_total_node_usage(uid: str) -> int:
@@ -1496,28 +1500,17 @@ def get_total_node_usage(uid: str) -> int:
 
 
 async def get_total_usage(uid: str) -> int:
-    """جمع مصرف Master + همه Nodeها رو برمی‌گردونه.
+    """جمع مصرف Master + همه Nodeها رو از cache برمی‌گردونه (فوری).
     
-    مستقیم از نودها می‌پرسه (به‌جای انتظار برای گزارش).
+    cache توسط usage_cache_updater_loop هر ۳۰ ثانیه آپدیت می‌شه.
     """
     master_used = 0
     link = LINKS.get(uid)
     if link:
         master_used = int(link.get("used_bytes", 0))
     
-    # ⭐ مستقیم از نودها بپرس
-    node_total = 0
-    try:
-        from nodes import fetch_all_nodes_usage
-        node_total = await asyncio.wait_for(fetch_all_nodes_usage(uid), timeout=6.0)
-    except asyncio.TimeoutError:
-        logger.warning(f"[USAGE] fetch_all_nodes_usage timed out for {uid[:8]}")
-        node_total = get_cached_node_usage(uid)
-    except Exception as e:
-        logger.warning(f"[USAGE] fetch_all_nodes_usage failed for {uid[:8]}: {e}")
-        node_total = get_cached_node_usage(uid)
-    
-    return master_used + node_total
+    # ⭐ فقط از cache بخون (فوری — زیر ۱ میلی‌ثانیه)
+    return master_used + get_cached_node_usage(uid)
 
 
 def invalidate_node_usage_cache(uid: str | None = None):
