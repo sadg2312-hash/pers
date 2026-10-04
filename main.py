@@ -4675,7 +4675,7 @@ body[dir="rtl"]{direction:rtl;text-align:right}
                 <option value="7">7 - 🇨🇦 Canada</option>
                 <option value="8">8 - 🇧🇪 Belgium</option>
                 <option value="9">9 - 🇫🇷 France</option>
-                <option value="10">10 - 🇦🇺 Australia</option>
+                <option value="10">10 - 🇯🇵 Japan</option>
               </select>
               <div style="font-size:10px;color:var(--text3);margin-top:4px">توی پنل Master، توی کدوم اسلات قرار داری؟</div>
             </div>
