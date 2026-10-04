@@ -35,11 +35,11 @@ DEFAULT_SLOTS = [
     {"slot": 3, "flag": "🇳🇱", "country_code": "nl", "label": "Netherlands"},
     {"slot": 4, "flag": "🇫🇮", "country_code": "fi", "label": "Finland"},
     {"slot": 5, "flag": "🇩🇪", "country_code": "de", "label": "Germany"},
-    {"slot": 6, "flag": "🇮🇳", "country_code": "in", "label": "India"},
+    {"slot": 6, "flag": "🇵🇱", "country_code": "pl", "label": "Poland"},
     {"slot": 7, "flag": "🇨🇦", "country_code": "ca", "label": "Canada"},
-    {"slot": 8, "flag": "🇬🇧", "country_code": "gb", "label": "United Kingdom"},
+    {"slot": 8, "flag": "🇧🇪", "country_code": "be", "label": "Belgium"},
     {"slot": 9, "flag": "🇫🇷", "country_code": "fr", "label": "France"},
-    {"slot": 10, "flag": "🇯🇵", "country_code": "jp", "label": "Japan"},
+    {"slot": 10, "flag": "🇦🇺", "country_code": "au", "label": "Australia"},
 ]
 
 def migrate_nodes_table_for_10_slots():
