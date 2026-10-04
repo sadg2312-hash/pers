@@ -39,7 +39,7 @@ DEFAULT_SLOTS = [
     {"slot": 7, "flag": "🇨🇦", "country_code": "ca", "label": "Canada"},
     {"slot": 8, "flag": "🇧🇪", "country_code": "be", "label": "Belgium"},
     {"slot": 9, "flag": "🇫🇷", "country_code": "fr", "label": "France"},
-    {"slot": 10, "flag": "🇦🇺", "country_code": "au", "label": "Australia"},
+    {"slot": 10, "flag": "🇯🇵", "country_code": "jp", "label": "Japan"},
 ]
 
 def migrate_nodes_table_for_10_slots():
