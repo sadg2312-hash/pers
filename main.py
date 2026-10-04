@@ -4677,11 +4677,11 @@ body[dir="rtl"]{direction:rtl;text-align:right}
                 <option value="3">3 - 🇳🇱 Netherlands</option>
                 <option value="4">4 - 🇫🇮 Finland</option>
                 <option value="5">5 - 🇩🇪 Germany</option>
-                <option value="6">6 - 🇮🇳 India</option>
+                <option value="6">6 - 🇵🇱 Poland</option>
                 <option value="7">7 - 🇨🇦 Canada</option>
-                <option value="8">8 - 🇬🇧 United Kingdom</option>
+                <option value="8">8 - 🇧🇪 Belgium</option>
                 <option value="9">9 - 🇫🇷 France</option>
-                <option value="10">10 - 🇯🇵 Japan</option>
+                <option value="10">10 - 🇦🇺 Australia</option>
               </select>
               <div style="font-size:10px;color:var(--text3);margin-top:4px">توی پنل Master، توی کدوم اسلات قرار داری؟</div>
             </div>
