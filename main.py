@@ -1509,7 +1509,7 @@ async def get_total_usage(uid: str) -> int:
     node_total = 0
     try:
         from nodes import fetch_all_nodes_usage
-        node_total = await asyncio.wait_for(fetch_all_nodes_usage(uid), timeout=1.0)
+        node_total = await asyncio.wait_for(fetch_all_nodes_usage(uid), timeout=6.0)
     except asyncio.TimeoutError:
         logger.warning(f"[USAGE] fetch_all_nodes_usage timed out for {uid[:8]}")
         node_total = get_cached_node_usage(uid)
