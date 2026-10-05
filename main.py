@@ -410,7 +410,7 @@ COUNTRIES = {
     "be": {"name": "Belgium",       "flag": "🇧🇪"},
 }
 
-MAX_NODES = 10
+MAX_NODES = 17
 
 NODE_SETTINGS_KEYS = (
     "panel_role",
@@ -737,7 +737,7 @@ def init_db():
         );
         CREATE TABLE IF NOT EXISTS nodes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            slot INTEGER UNIQUE CHECK(slot BETWEEN 1 AND 10),
+            slot INTEGER UNIQUE CHECK(slot BETWEEN 1 AND 17),
             name TEXT NOT NULL,
             country_code TEXT NOT NULL,
             flag TEXT NOT NULL,
@@ -4676,6 +4676,13 @@ body[dir="rtl"]{direction:rtl;text-align:right}
                 <option value="8">8 - 🇧🇪 Belgium</option>
                 <option value="9">9 - 🇫🇷 France</option>
                 <option value="10">10 - 🇯🇵 Japan</option>
+                <option value="11">11 - 🇪🇸 Spain</option>
+                <option value="12">12 - 🇸🇪 Sweden</option>
+                <option value="13">13 - 🇨🇭 Switzerland</option>
+                <option value="14">14 - 🇬🇧 United Kingdom</option>
+                <option value="15">15 - 🇦🇪 UAE</option>
+                <option value="16">16 - 🇰🇷 South Korea</option>
+                <option value="17">17 - 🇧🇷 Brazil</option>
               </select>
               <div style="font-size:10px;color:var(--text3);margin-top:4px">توی پنل Master، توی کدوم اسلات قرار داری؟</div>
             </div>
