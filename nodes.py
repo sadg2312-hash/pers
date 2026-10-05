@@ -39,10 +39,17 @@ DEFAULT_SLOTS = [
     {"slot": 7, "flag": "🇨🇦", "country_code": "ca", "label": "Canada"},
     {"slot": 8, "flag": "🇧🇪", "country_code": "be", "label": "Belgium"},
     {"slot": 9, "flag": "🇫🇷", "country_code": "fr", "label": "France"},
-    {"slot": 10, "flag": "🇯🇵", "country_code": "jp", "label": "Japan"},
+    {"slot": 10, "flag": "🇦🇺", "country_code": "au", "label": "Australia"},
+    {"slot": 11, "flag": "🇪🇸", "country_code": "es", "label": "Spain"},
+    {"slot": 12, "flag": "🇸🇪", "country_code": "se", "label": "Sweden"},
+    {"slot": 13, "flag": "🇨🇭", "country_code": "ch", "label": "Switzerland"},
+    {"slot": 14, "flag": "🇬🇧", "country_code": "gb", "label": "United Kingdom"},
+    {"slot": 15, "flag": "🇦🇪", "country_code": "ae", "label": "UAE"},
+    {"slot": 16, "flag": "🇰🇷", "country_code": "kr", "label": "South Korea"},
+    {"slot": 17, "flag": "🇧🇷", "country_code": "br", "label": "Brazil"},
 ]
 
-def migrate_nodes_table_for_10_slots():
+def migrate_nodes_table_for_17_slots():
     """
     جدول nodes رو از CHECK(1-5) یا CHECK(1-7) به CHECK(1-10) مهاجرت می‌ده.
     
@@ -57,10 +64,10 @@ def migrate_nodes_table_for_10_slots():
             return  # جدول وجود نداره، بعداً ساخته می‌شه
         
         current_sql = row["sql"] or ""
-        if "BETWEEN 1 AND 10" in current_sql:
+        if "BETWEEN 1 AND 17" in current_sql:
             return  # از قبل درسته
         
-        logger.warning("[NODE] Migrating nodes table to CHECK(1-10)...")
+        logger.warning("[NODE] Migrating nodes table to CHECK(1-17)...")
         
         # ۱. جدول قدیمی رو rename کن
         conn.execute("ALTER TABLE nodes RENAME TO nodes_old")
@@ -69,7 +76,7 @@ def migrate_nodes_table_for_10_slots():
         conn.execute("""
             CREATE TABLE nodes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                slot INTEGER UNIQUE CHECK(slot BETWEEN 1 AND 10),
+                slot INTEGER UNIQUE CHECK(slot BETWEEN 1 AND 17),
                 name TEXT NOT NULL,
                 country_code TEXT NOT NULL,
                 flag TEXT NOT NULL,
@@ -94,7 +101,7 @@ def migrate_nodes_table_for_10_slots():
         conn.execute("DROP TABLE nodes_old")
         
         conn.commit()
-        logger.info("[NODE] Successfully migrated nodes table to CHECK(1-10)")
+        logger.info("[NODE] Successfully migrated nodes table to CHECK(1-17)")
     except Exception as e:
         logger.error(f"[NODE] Migration failed: {e}")
         conn.rollback()
@@ -110,7 +117,7 @@ def init_default_slots():
     - اگه جدول پره، فقط اسلات‌های جدید (که نیستن) رو اضافه می‌کنه
     """
     conn = get_db()
-    migrate_nodes_table_for_10_slots()
+    migrate_nodes_table_for_17_slots()
     try:
         # چک کن کدوم اسلات‌ها هستن
         cur = conn.execute("SELECT slot FROM nodes")
