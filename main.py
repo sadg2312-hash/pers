@@ -1740,6 +1740,7 @@ async def telegram_notifier_cron():
         await asyncio.sleep(60)
 
 @app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def root():
     return HTMLResponse(content='''<!DOCTYPE html>
 <html>
@@ -1748,11 +1749,23 @@ async def root():
 <meta charset="UTF-8">
 <style>
   *{margin:0;padding:0}
-  html,body{height:100%;overflow:hidden}
-  body{background:#000 url('/client/jet_website_under_1mb.jpg') no-repeat center center;background-size:cover}
+  html,body{height:100%;width:100%;overflow:hidden;background:#000}
+  video{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:-1;
+  }
 </style>
 </head>
-<body></body>
+<body>
+<video autoplay muted loop playsinline preload="auto">
+  <source src="/client/intro.mp4" type="video/mp4">
+</video>
+</body>
 </html>''')
 @app.get("/health")
 async def health():
