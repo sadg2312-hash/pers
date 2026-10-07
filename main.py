@@ -1741,6 +1741,7 @@ async def telegram_notifier_cron():
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def root():
     return HTMLResponse(content='''<!DOCTYPE html>
 <html>
@@ -1750,21 +1751,59 @@ async def root():
 <style>
   *{margin:0;padding:0}
   html,body{height:100%;width:100%;overflow:hidden;background:#000}
-  video{
+  #intro-video{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    object-fit:cover;
+    z-index:1;
+  }
+  .fallback{
     position:fixed;
     top:0;
     left:0;
     width:100%;
     height:100%;
-    object-fit:cover;
-    z-index:-1;
+    background:#000 url('/client/jet_website_under_1mb.jpg') no-repeat center center;
+    background-size:cover;
+    z-index:0;
   }
 </style>
 </head>
 <body>
-<video autoplay muted loop playsinline preload="auto">
+<div class="fallback"></div>
+<video id="intro-video" autoplay muted loop playsinline preload="auto" webkit-playsinline>
   <source src="/client/intro.mp4" type="video/mp4">
 </video>
+<script>
+  (function(){
+    var v = document.getElementById('intro-video');
+    if(!v) return;
+
+    var playPromise = v.play();
+
+    if (playPromise !== undefined) {
+      playPromise.then(function(){
+        console.log('Video playing');
+      }).catch(function(err){
+        console.log('Autoplay blocked:', err);
+        document.addEventListener('click', function(){
+          v.play();
+        }, { once: true });
+        document.addEventListener('touchstart', function(){
+          v.play();
+        }, { once: true });
+      });
+    }
+
+    v.addEventListener('error', function(){
+      console.log('Video failed to load');
+      v.style.display = 'none';
+    });
+  })();
+</script>
 </body>
 </html>''')
 @app.get("/health")
