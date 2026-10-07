@@ -3304,6 +3304,119 @@ def generate_singbox_config(link: dict, uid: str, addresses: list[str]) -> str:
     }
     return json.dumps(config, ensure_ascii=False, indent=2)
 
+def _build_clash_proxy_from_vless(vless_url: str, slot: int, node: dict) -> str | None:
+    """یه vless:// link رو به فرمت YAML Clash تبدیل می‌کنه."""
+    try:
+        import urllib.parse as _up
+        line = vless_url.strip()
+        if not line.startswith("vless://"):
+            return None
+
+        body = line[8:]
+        if "#" in body:
+            body, remark = body.split("#", 1)
+            remark = _up.unquote(remark)
+        else:
+            remark = f"{node.get('name', 'Node')}-{slot}"
+
+        if "?" in body:
+            body, query = body.split("?", 1)
+        else:
+            query = ""
+
+        if "@" in body:
+            cred, addr = body.split("@", 1)
+        else:
+            cred, addr = "", body
+
+        if ":" in addr:
+            host, port = addr.rsplit(":", 1)
+        else:
+            host, port = addr, "443"
+
+        params = dict(_up.parse_qsl(query))
+        sni = params.get("sni", params.get("host", host))
+        fp = params.get("fp", "chrome")
+        ws_path = params.get("path", "/")
+        host_hdr = params.get("host", host)
+
+        # نام نمایشی (پرچم دار)
+        flag = node.get("flag", "🌐")
+        proxy_name = f"{flag} {remark}"
+
+        return (
+            f'  - name: "{proxy_name}"\n'
+            f'    type: vless\n'
+            f'    server: {host}\n'
+            f'    port: {port}\n'
+            f'    uuid: {cred}\n'
+            f'    udp: true\n'
+            f'    tls: true\n'
+            f'    skip-cert-verify: false\n'
+            f'    servername: {sni}\n'
+            f'    client-fingerprint: {fp}\n'
+            f'    network: ws\n'
+            f'    ws-opts:\n'
+            f'      path: {ws_path}\n'
+            f'      headers:\n'
+            f'        Host: {host_hdr}\n'
+        )
+    except Exception as e:
+        logger.warning(f"[CLASH] Failed to build proxy from vless: {e}")
+        return None
+
+
+def _append_proxies_to_clash(clash_yaml: str, new_proxies: list[str]) -> str:
+    """کانفیگ‌های جدید رو به Clash YAML اضافه می‌کنه."""
+    try:
+        lines = clash_yaml.split("\n")
+
+        # پیدا کردن محل proxies:
+        proxies_idx = None
+        for i, line in enumerate(lines):
+            if line.strip() == "proxies:":
+                proxies_idx = i
+                break
+
+        if proxies_idx is None:
+            logger.warning("[CLASH] Could not find 'proxies:' in clash yaml")
+            return clash_yaml
+
+        # اضافه کردن proxies جدید بعد از proxies:
+        insert_at = proxies_idx + 1
+        lines = lines[:insert_at] + new_proxies + lines[insert_at:]
+
+        # استخراج اسم‌های جدید
+        new_names = []
+        for p in new_proxies:
+            for line in p.split("\n"):
+                if line.strip().startswith("- name:"):
+                    name = line.split(":", 1)[1].strip().strip('"').strip("'")
+                    new_names.append(name)
+                    break
+
+        # اضافه کردن به Proxy Group ها (Proxy و Auto)
+        new_yaml = "\n".join(lines)
+        
+        # اضافه کردن هر اسم به گروه Proxy
+        import re
+        def add_to_group(match):
+            group_content = match.group(0)
+            for name in new_names:
+                # چک کن اگه اسم قبلاً هست، دوباره اضافه نکن
+                if f'"{name}"' not in group_content and f"'{name}'" not in group_content:
+                    group_content = group_content + f'      - "{name}"\n'
+            return group_content
+        
+        # Pattern: proxies:\n (چند تا خط با - "xxx"\n) تا خط بعدی که خالی یا ست
+        pattern = r'(    proxies:\n(?:      - "[^"]+"\n)+)'
+        new_yaml = re.sub(pattern, add_to_group, new_yaml)
+
+        return new_yaml
+    except Exception as e:
+        logger.warning(f"[CLASH] Failed to append proxies: {e}")
+        return clash_yaml
+
 
 async def generate_clash_config(link: dict, uid: str, addresses: list[str]) -> str:
     domain = get_domain()
@@ -3509,6 +3622,28 @@ async def subscription_endpoint(uid: str, request: Request):
 
     if is_clash:
         clash_content = await generate_clash_config(link, uid, addresses)
+
+        # ⭐ اضافه کردن کانفیگ‌های نودها به Clash
+        node_proxies = []
+        for slot in range(1, MAX_NODES + 1):
+            node = get_node_by_slot(slot)
+            if node and node.get("address") and node.get("status") == "online":
+                try:
+                    from nodes import get_config_from_node
+                    node_config = await get_config_from_node(slot, uid)
+                    if node_config:
+                        node_proxy = _build_clash_proxy_from_vless(node_config, slot, node)
+                        if node_proxy:
+                            node_proxies.append(node_proxy)
+                            logger.info(f"[CLASH] Added node slot {slot} to clash config")
+                except Exception as e:
+                    logger.warning(f"[CLASH] Failed to get config from node slot {slot}: {e}")
+
+        # اگه Node داشتیم، به Clash config اضافه کن
+        if node_proxies:
+            clash_content = _append_proxies_to_clash(clash_content, node_proxies)
+            logger.info(f"[CLASH] Added {len(node_proxies)} node(s) to clash config")
+
         headers = {
             "Content-Type": "text/yaml; charset=utf-8",
             "Content-Disposition": 'attachment; filename="clash.yaml"',
