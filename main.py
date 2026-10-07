@@ -1740,40 +1740,45 @@ async def telegram_notifier_cron():
         await asyncio.sleep(60)
 
 @app.get("/", response_class=HTMLResponse)
-@app.get("/", response_class=HTMLResponse)
-@app.get("/", response_class=HTMLResponse)
 async def root():
     return HTMLResponse(content='''<!DOCTYPE html>
 <html>
 <head>
 <title>エムエディー</title>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  *{margin:0;padding:0}
-  html,body{height:100%;width:100%;overflow:hidden;background:#000}
-  #intro-video{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100vw;
-    height:100vh;
-    object-fit:cover;
-    z-index:1;
-  }
-  .fallback{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{
     height:100%;
-    background:#000 url('/client/jet_website_under_1mb.jpg') no-repeat center center;
-    background-size:cover;
-    z-index:0;
+    width:100%;
+    overflow:hidden;
+    background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #intro-video{
+    max-width:98vw;
+    max-height:95vh;
+    width:auto;
+    height:auto;
+    border-radius:24px;
+    box-shadow:0 0 80px rgba(59,130,246,0.5),
+               0 0 120px rgba(59,130,246,0.2);
+    object-fit:contain;
+  }
+  @media (max-width:768px){
+    #intro-video{
+      max-width:100vw;
+      max-height:90vh;
+      border-radius:0;
+      box-shadow:none;
+    }
   }
 </style>
 </head>
 <body>
-<div class="fallback"></div>
 <video id="intro-video" autoplay muted loop playsinline preload="auto" webkit-playsinline>
   <source src="/client/intro.mp4" type="video/mp4">
 </video>
@@ -1781,27 +1786,13 @@ async def root():
   (function(){
     var v = document.getElementById('intro-video');
     if(!v) return;
-
-    var playPromise = v.play();
-
-    if (playPromise !== undefined) {
-      playPromise.then(function(){
-        console.log('Video playing');
-      }).catch(function(err){
-        console.log('Autoplay blocked:', err);
-        document.addEventListener('click', function(){
-          v.play();
-        }, { once: true });
-        document.addEventListener('touchstart', function(){
-          v.play();
-        }, { once: true });
+    var p = v.play();
+    if (p !== undefined) {
+      p.catch(function(){
+        document.addEventListener('click', function(){ v.play(); }, { once: true });
+        document.addEventListener('touchstart', function(){ v.play(); }, { once: true });
       });
     }
-
-    v.addEventListener('error', function(){
-      console.log('Video failed to load');
-      v.style.display = 'none';
-    });
   })();
 </script>
 </body>
