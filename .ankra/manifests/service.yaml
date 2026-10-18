@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pers
+  labels:
+    app.kubernetes.io/name: pers
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: pers
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
