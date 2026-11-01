@@ -4790,10 +4790,6 @@ body[dir="rtl"]{direction:rtl;text-align:right}
           <button class="btn btn-gold" onclick="chgPw()" style="margin-top:10px;width:100%;justify-content:center" data-en="Update Password" data-fa="بروزرسانی رمز">Update Password</button>
         </div>
       </div>
-      <div class="card" style="margin-top:14px">
-        <div class="card-hd"><div class="card-title" data-en="Live Logs" data-fa="لاگ‌های زنده">Live Logs</div></div>
-        <div class="live-logs-container" id="log-container">Connecting to live logs...</div>
-      </div>
     </section>
 
     <!-- Settings -->
